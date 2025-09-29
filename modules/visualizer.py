@@ -241,33 +241,16 @@ def create_folium_map(location, zoom, base_map_config, overlays_config, fit_boun
 #--- MAIN TAB DISPLAY FUNCTIONS ---
 def display_welcome_tab():
     st.header("Bienvenido al Sistema de Información de Lluvias y Clima")
-    st.markdown(Config.WELCOME_TEXT, unsafe_allow_html=True) # [cite: 1089]
-
-    # Botón para abrir el diálogo del tutorial
-    if st.button("✨ Mostrar Guía Rápida", type="primary"):
-        with st.dialog("Guía de Inicio Rápido"):
-            st.markdown("### ¿Cómo Empezar?")
-            
-            st.markdown("#### Paso 1: Cargar Archivos 📂")
-            st.info("Usa el **Panel de Control** en la barra lateral izquierda para subir tus 3 archivos base (estaciones, precipitación y municipios). Luego, haz clic en **'Procesar y Almacenar Datos'**.")
-            
-            st.markdown("#### Paso 2: Aplicar Filtros 🔬")
-            st.info("Una vez cargados los datos, usa los filtros geográficos (región, municipio) y temporales (rango de años) para acotar tu análisis a los datos de interés.")
-
-            st.markdown("#### Paso 3: Explorar Análisis 📊")
-            st.info("Navega a través de las diferentes pestañas en la parte superior para acceder a mapas, gráficos, análisis de tendencias, pronósticos y más.")
-            
-            if os.path.exists(Config.GIF_PATH):
-                st.image(Config.GIF_PATH, caption="Ejemplo de Mapa Animado") # [cite: 1524-1527]
-
-    # Mostrar el logo al final
+    st.markdown(Config.WELCOME_TEXT, unsafe_allow_html=True)
     if os.path.exists(Config.LOGO_PATH):
         try:
-            with open(Config.LOGO_PATH, "rb") as f: # [cite: 1092]
-                logo_bytes = f.read() # [cite: 1093]
-            st.image(logo_bytes, width=250, caption="Corporación Cuenca Verde") # [cite: 1094]
+            # CORRECCIÓN: Leemos la imagen en binario para evitar UnidentifiedImageError
+            with open(Config.LOGO_PATH, "rb") as f:
+                logo_bytes = f.read()
+            st.image(logo_bytes, width=250, caption="Corporación Cuenca Verde")
         except Exception:
-            st.warning("No se pudo cargar el logo de bienvenida.") # [cite: 1095]
+            st.warning("No se pudo cargar el logo de bienvenida.")
+
 
 def display_spatial_distribution_tab(gdf_filtered, stations_for_analysis, df_anual_melted, df_monthly_filtered):
     st.header("Distribución espacial de las Estaciones de Lluvia")
@@ -1457,6 +1440,7 @@ def display_stats_tab(df_long, df_anual_melted, df_monthly_filtered, stations_fo
         else:
             st.info("No hay datos para mostrar la síntesis general.")
 
+
 def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
     st.header("Análisis de Correlación")
     display_filter_summary(
@@ -1538,7 +1522,7 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                     'precipitation': 'Precipitación Mensual (mm)'
                 }
             )
-            st.plotly_chart(fig_corr, use_container_width=True)
+            st.plotly_chart(fig_corr, width='stretch')
 
     with station_corr_tab:
         if len(stations_for_analysis) < 2:
@@ -1575,51 +1559,27 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                         title=f'Dispersión de Precipitación: {station1_name} vs. {station2_name}',
                         labels={station1_name: f'Precipitación en {station1_name} (mm)', station2_name: f'Precipitación en {station2_name} (mm)'}
                     )
-                    st.plotly_chart(fig_scatter, use_container_width=True)
-            
-            # --- Bloque del heatmap correctamente anidado aquí ---
-            st.markdown("---")
-            st.subheader("Matriz de Correlación de Todas las Estaciones Seleccionadas")
-            
-            if len(stations_for_analysis) > 1:
-                with st.spinner("Calculando matriz de correlación..."):
-                    df_wide = df_monthly_filtered.pivot_table(
-                        index=Config.DATE_COL,
-                        columns=Config.STATION_NAME_COL,
-                        values=Config.PRECIPITATION_COL
-                    )
-                    corr_matrix = df_wide.corr(method='pearson')
-                    fig_heatmap = px.imshow(
-                        corr_matrix,
-                        text_auto=True,
-                        aspect="auto",
-                        color_continuous_scale='RdBu_r',
-                        range_color=[-1, 1],
-                        labels=dict(color="Correlación"),
-                        title="Correlación de Precipitación Mensual entre Estaciones"
-                    )
-                    fig_heatmap.update_layout(height=max(400, len(stations_for_analysis) * 30))
-                    st.plotly_chart(fig_heatmap, use_container_width=True)
-            else:
-                st.info("Seleccione al menos dos estaciones para generar la matriz de correlación.")
+                    st.plotly_chart(fig_scatter, width='stretch')
+                else:
+                    st.warning("No hay suficientes datos superpuestos para calcular la correlación para las estaciones seleccionadas.")
 
-    # Este bloque ahora está correctamente posicionado al mismo nivel que los otros 'with'
     with indices_climaticos_tab:
         st.subheader("Análisis de Correlación con Índices Climáticos (SOI, IOD)")
-        
         available_indices = []
         if Config.SOI_COL in df_monthly_filtered.columns and not df_monthly_filtered[Config.SOI_COL].isnull().all():
             available_indices.append("SOI")
         if Config.IOD_COL in df_monthly_filtered.columns and not df_monthly_filtered[Config.IOD_COL].isnull().all():
             available_indices.append("IOD")
-
+            
         if not available_indices:
             st.warning("No se encontraron columnas para los índices climáticos (SOI o IOD) en el archivo principal o no hay datos en el período seleccionado.")
         else:
             col1_corr, col2_corr = st.columns(2)
             selected_index = col1_corr.selectbox("Seleccione un índice climático:", available_indices)
-            selected_station_corr = col2_corr.selectbox("Seleccione una estación:", options=sorted(stations_for_analysis), key="station_for_index_corr")
-            
+            selected_station_corr = col2_corr.selectbox("Seleccione una estación:",
+                                                        options=sorted(stations_for_analysis),
+                                                        key="station_for_index_corr")
+                                                        
             if selected_index and selected_station_corr:
                 index_col_map = {"SOI": Config.SOI_COL, "IOD": Config.IOD_COL}
                 index_col_name = index_col_map.get(selected_index)
@@ -1627,24 +1587,30 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                 
                 if index_col_name in df_merged_indices.columns:
                     df_merged_indices.dropna(subset=[Config.PRECIPITATION_COL, index_col_name], inplace=True)
-                    if not df_merged_indices.empty and len(df_merged_indices) > 2:
-                        corr, p_value = stats.pearsonr(df_merged_indices[index_col_name], df_merged_indices[Config.PRECIPITATION_COL])
-                        st.markdown(f"#### Resultados de la correlación ({selected_index}) vs. Precipitación de {selected_station_corr}")
-                        st.metric(f"Coeficiente de Correlación (r)", f"{corr:.3f}")
-                        if p_value < 0.05:
-                            st.success("La correlación es estadísticamente significativa.")
-                        else:
-                            st.warning(f"La correlación no es estadísticamente significativa.")
-                        
-                        fig_scatter_indices = px.scatter(
-                            df_merged_indices, x=index_col_name, y=Config.PRECIPITATION_COL,
-                            trendline='ols',
-                            title=f'Dispersión: {selected_index} vs. Precipitación de {selected_station_corr}',
-                            labels={index_col_name: f'Valor del índice {selected_index}', Config.PRECIPITATION_COL: 'Precipitación Mensual (mm)'}
-                        )
-                        st.plotly_chart(fig_scatter_indices, use_container_width=True)
+                else:
+                    st.error(f"La columna para el índice '{selected_index}' no se encontró en los datos de la estación.")
+                    return
+
+                if not df_merged_indices.empty and len(df_merged_indices) > 2:
+                    corr, p_value = stats.pearsonr(df_merged_indices[index_col_name], df_merged_indices[Config.PRECIPITATION_COL])
+                    st.markdown(f"#### Resultados de la correlación ({selected_index}) vs. Precipitación de {selected_station_corr}")
+                    st.metric("Coeficiente de Correlación (r)", f"{corr:.3f}")
+                    
+                    if p_value < 0.05:
+                        st.success("La correlación es estadísticamente significativa.")
                     else:
-                        st.warning("No hay suficientes datos superpuestos entre la estación y el índice para calcular la correlación.")
+                        st.warning(f"La correlación no es estadísticamente significativa.")
+                        
+                    fig_scatter_indices = px.scatter(
+                        df_merged_indices, x=index_col_name, y=Config.PRECIPITATION_COL,
+                        trendline='ols',
+                        title=f'Dispersión: {selected_index} vs. Precipitación de {selected_station_corr}',
+                        labels={index_col_name: f'Valor del índice {selected_index}',
+                                Config.PRECIPITATION_COL: 'Precipitación Mensual (mm)'}
+                    )
+                    st.plotly_chart(fig_scatter_indices, width='stretch')
+                else:
+                    st.warning("No hay suficientes datos superpuestos entre la estación y el índice para calcular la correlación.")
 
 # --- INICIO DE display_enso_tab ---
 
