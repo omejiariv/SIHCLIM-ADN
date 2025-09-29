@@ -1603,9 +1603,10 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
             else:
                 st.info("Seleccione al menos dos estaciones para generar la matriz de correlación.")
 
+    # Este bloque ahora está correctamente posicionado al mismo nivel que los otros 'with'
     with indices_climaticos_tab:
         st.subheader("Análisis de Correlación con Índices Climáticos (SOI, IOD)")
-        # ... (Aquí va el resto del código para esta pestaña, que ya tenías)
+        
         available_indices = []
         if Config.SOI_COL in df_monthly_filtered.columns and not df_monthly_filtered[Config.SOI_COL].isnull().all():
             available_indices.append("SOI")
@@ -1613,14 +1614,12 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
             available_indices.append("IOD")
 
         if not available_indices:
-            st.warning("No se encontraron columnas para los índices climáticos (SOI o IOD).")
+            st.warning("No se encontraron columnas para los índices climáticos (SOI o IOD) en el archivo principal o no hay datos en el período seleccionado.")
         else:
             col1_corr, col2_corr = st.columns(2)
             selected_index = col1_corr.selectbox("Seleccione un índice climático:", available_indices)
-            selected_station_corr = col2_corr.selectbox("Seleccione una estación:",
-                                                        options=sorted(stations_for_analysis),
-                                                        key="station_for_index_corr")
-                                                        
+            selected_station_corr = col2_corr.selectbox("Seleccione una estación:", options=sorted(stations_for_analysis), key="station_for_index_corr")
+            
             if selected_index and selected_station_corr:
                 index_col_map = {"SOI": Config.SOI_COL, "IOD": Config.IOD_COL}
                 index_col_name = index_col_map.get(selected_index)
@@ -1628,30 +1627,24 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                 
                 if index_col_name in df_merged_indices.columns:
                     df_merged_indices.dropna(subset=[Config.PRECIPITATION_COL, index_col_name], inplace=True)
-                else:
-                    st.error(f"La columna para el índice '{selected_index}' no se encontró en los datos de la estación.")
-                    return
-
-                if not df_merged_indices.empty and len(df_merged_indices) > 2:
-                    corr, p_value = stats.pearsonr(df_merged_indices[index_col_name], df_merged_indices[Config.PRECIPITATION_COL])
-                    st.markdown(f"#### Resultados de la correlación ({selected_index}) vs. Precipitación de {selected_station_corr}")
-                    st.metric("Coeficiente de Correlación (r)", f"{corr:.3f}")
-                    
-                    if p_value < 0.05:
-                        st.success("La correlación es estadísticamente significativa.")
-                    else:
-                        st.warning(f"La correlación no es estadísticamente significativa.")
+                    if not df_merged_indices.empty and len(df_merged_indices) > 2:
+                        corr, p_value = stats.pearsonr(df_merged_indices[index_col_name], df_merged_indices[Config.PRECIPITATION_COL])
+                        st.markdown(f"#### Resultados de la correlación ({selected_index}) vs. Precipitación de {selected_station_corr}")
+                        st.metric(f"Coeficiente de Correlación (r)", f"{corr:.3f}")
+                        if p_value < 0.05:
+                            st.success("La correlación es estadísticamente significativa.")
+                        else:
+                            st.warning(f"La correlación no es estadísticamente significativa.")
                         
-                    fig_scatter_indices = px.scatter(
-                        df_merged_indices, x=index_col_name, y=Config.PRECIPITATION_COL,
-                        trendline='ols',
-                        title=f'Dispersión: {selected_index} vs. Precipitación de {selected_station_corr}',
-                        labels={index_col_name: f'Valor del índice {selected_index}',
-                                Config.PRECIPITATION_COL: 'Precipitación Mensual (mm)'}
-                    )
-                    st.plotly_chart(fig_scatter_indices, width='stretch')
-                else:
-                    st.warning("No hay suficientes datos superpuestos entre la estación y el índice para calcular la correlación.")
+                        fig_scatter_indices = px.scatter(
+                            df_merged_indices, x=index_col_name, y=Config.PRECIPITATION_COL,
+                            trendline='ols',
+                            title=f'Dispersión: {selected_index} vs. Precipitación de {selected_station_corr}',
+                            labels={index_col_name: f'Valor del índice {selected_index}', Config.PRECIPITATION_COL: 'Precipitación Mensual (mm)'}
+                        )
+                        st.plotly_chart(fig_scatter_indices, use_container_width=True)
+                    else:
+                        st.warning("No hay suficientes datos superpuestos entre la estación y el índice para calcular la correlación.")
 
 # --- INICIO DE display_enso_tab ---
 
