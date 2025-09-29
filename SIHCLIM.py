@@ -295,8 +295,8 @@ if params:
 
             years_with_data = sorted(st.session_state.df_long[Config.YEAR_COL].dropna().unique())
             if not years_with_data:
-                 st.error("No hay datos de año válidos en el archivo de precipitación.")
-                 return
+                st.error("No hay datos de año válidos en el archivo de precipitación.")
+                return
                  
             year_range_default = (min(years_with_data), max(years_with_data))
             
