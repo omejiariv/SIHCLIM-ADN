@@ -1577,8 +1577,39 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                         labels={station1_name: f'Precipitación en {station1_name} (mm)', station2_name: f'Precipitación en {station2_name} (mm)'}
                     )
                     st.plotly_chart(fig_scatter, width='stretch')
-                else:
-                    st.warning("No hay suficientes datos superpuestos para calcular la correlación para las estaciones seleccionadas.")
+                st.markdown("---")
+st.subheader("Matriz de Correlación de Todas las Estaciones Seleccionadas")
+
+if len(stations_for_analysis) > 1:
+    with st.spinner("Calculando matriz de correlación..."):
+        # 1. Reformatear los datos: de formato largo a ancho
+        #    Las filas serán las fechas, las columnas las estaciones
+        df_wide = df_monthly_filtered.pivot_table(
+            index=Config.DATE_COL,
+            columns=Config.STATION_NAME_COL,
+            values=Config.PRECIPITATION_COL
+        )
+
+        # 2. Calcular la matriz de correlación de Pearson
+        #    Esto compara cada estación (columna) con todas las demás
+        corr_matrix = df_wide.corr(method='pearson')
+
+        # 3. Visualizar la matriz como un mapa de calor (heatmap)
+        fig_heatmap = px.imshow(
+            corr_matrix,
+            text_auto=True, # Muestra los valores de correlación en las celdas
+            aspect="auto",
+            color_continuous_scale='RdBu_r', # Escala de color Rojo-Azul (invertida)
+            range_color=[-1, 1], # Forzar el rango de -1 a 1
+            labels=dict(color="Correlación"),
+            title="Correlación de Precipitación Mensual entre Estaciones"
+        )
+        
+        fig_heatmap.update_layout(height=max(400, len(stations_for_analysis) * 30))
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+
+else:
+    st.info("Seleccione al menos dos estaciones para generar la matriz de correlación.")
 
     with indices_climaticos_tab:
         st.subheader("Análisis de Correlación con Índices Climáticos (SOI, IOD)")
