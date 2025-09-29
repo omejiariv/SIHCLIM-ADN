@@ -1457,7 +1457,6 @@ def display_stats_tab(df_long, df_anual_melted, df_monthly_filtered, stations_fo
         else:
             st.info("No hay datos para mostrar la síntesis general.")
 
-
 def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
     st.header("Análisis de Correlación")
     display_filter_summary(
@@ -1539,7 +1538,7 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                     'precipitation': 'Precipitación Mensual (mm)'
                 }
             )
-            st.plotly_chart(fig_corr, width='stretch')
+            st.plotly_chart(fig_corr, use_container_width=True)
 
     with station_corr_tab:
         if len(stations_for_analysis) < 2:
@@ -1576,51 +1575,45 @@ def display_correlation_tab(df_monthly_filtered, stations_for_analysis):
                         title=f'Dispersión de Precipitación: {station1_name} vs. {station2_name}',
                         labels={station1_name: f'Precipitación en {station1_name} (mm)', station2_name: f'Precipitación en {station2_name} (mm)'}
                     )
-                    st.plotly_chart(fig_scatter, width='stretch')
-                st.markdown("---")
-st.subheader("Matriz de Correlación de Todas las Estaciones Seleccionadas")
-
-if len(stations_for_analysis) > 1:
-    with st.spinner("Calculando matriz de correlación..."):
-        # 1. Reformatear los datos: de formato largo a ancho
-        #    Las filas serán las fechas, las columnas las estaciones
-        df_wide = df_monthly_filtered.pivot_table(
-            index=Config.DATE_COL,
-            columns=Config.STATION_NAME_COL,
-            values=Config.PRECIPITATION_COL
-        )
-
-        # 2. Calcular la matriz de correlación de Pearson
-        #    Esto compara cada estación (columna) con todas las demás
-        corr_matrix = df_wide.corr(method='pearson')
-
-        # 3. Visualizar la matriz como un mapa de calor (heatmap)
-        fig_heatmap = px.imshow(
-            corr_matrix,
-            text_auto=True, # Muestra los valores de correlación en las celdas
-            aspect="auto",
-            color_continuous_scale='RdBu_r', # Escala de color Rojo-Azul (invertida)
-            range_color=[-1, 1], # Forzar el rango de -1 a 1
-            labels=dict(color="Correlación"),
-            title="Correlación de Precipitación Mensual entre Estaciones"
-        )
-        
-        fig_heatmap.update_layout(height=max(400, len(stations_for_analysis) * 30))
-        st.plotly_chart(fig_heatmap, use_container_width=True)
-
-else:
-    st.info("Seleccione al menos dos estaciones para generar la matriz de correlación.")
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+            
+            # --- Bloque del heatmap correctamente anidado aquí ---
+            st.markdown("---")
+            st.subheader("Matriz de Correlación de Todas las Estaciones Seleccionadas")
+            
+            if len(stations_for_analysis) > 1:
+                with st.spinner("Calculando matriz de correlación..."):
+                    df_wide = df_monthly_filtered.pivot_table(
+                        index=Config.DATE_COL,
+                        columns=Config.STATION_NAME_COL,
+                        values=Config.PRECIPITATION_COL
+                    )
+                    corr_matrix = df_wide.corr(method='pearson')
+                    fig_heatmap = px.imshow(
+                        corr_matrix,
+                        text_auto=True,
+                        aspect="auto",
+                        color_continuous_scale='RdBu_r',
+                        range_color=[-1, 1],
+                        labels=dict(color="Correlación"),
+                        title="Correlación de Precipitación Mensual entre Estaciones"
+                    )
+                    fig_heatmap.update_layout(height=max(400, len(stations_for_analysis) * 30))
+                    st.plotly_chart(fig_heatmap, use_container_width=True)
+            else:
+                st.info("Seleccione al menos dos estaciones para generar la matriz de correlación.")
 
     with indices_climaticos_tab:
         st.subheader("Análisis de Correlación con Índices Climáticos (SOI, IOD)")
+        # ... (Aquí va el resto del código para esta pestaña, que ya tenías)
         available_indices = []
         if Config.SOI_COL in df_monthly_filtered.columns and not df_monthly_filtered[Config.SOI_COL].isnull().all():
             available_indices.append("SOI")
         if Config.IOD_COL in df_monthly_filtered.columns and not df_monthly_filtered[Config.IOD_COL].isnull().all():
             available_indices.append("IOD")
-            
+
         if not available_indices:
-            st.warning("No se encontraron columnas para los índices climáticos (SOI o IOD) en el archivo principal o no hay datos en el período seleccionado.")
+            st.warning("No se encontraron columnas para los índices climáticos (SOI o IOD).")
         else:
             col1_corr, col2_corr = st.columns(2)
             selected_index = col1_corr.selectbox("Seleccione un índice climático:", available_indices)
