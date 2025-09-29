@@ -241,16 +241,33 @@ def create_folium_map(location, zoom, base_map_config, overlays_config, fit_boun
 #--- MAIN TAB DISPLAY FUNCTIONS ---
 def display_welcome_tab():
     st.header("Bienvenido al Sistema de Información de Lluvias y Clima")
-    st.markdown(Config.WELCOME_TEXT, unsafe_allow_html=True)
+    st.markdown(Config.WELCOME_TEXT, unsafe_allow_html=True) # [cite: 1089]
+
+    # Botón para abrir el diálogo del tutorial
+    if st.button("✨ Mostrar Guía Rápida", type="primary"):
+        with st.dialog("Guía de Inicio Rápido"):
+            st.markdown("### ¿Cómo Empezar?")
+            
+            st.markdown("#### Paso 1: Cargar Archivos 📂")
+            st.info("Usa el **Panel de Control** en la barra lateral izquierda para subir tus 3 archivos base (estaciones, precipitación y municipios). Luego, haz clic en **'Procesar y Almacenar Datos'**.")
+            
+            st.markdown("#### Paso 2: Aplicar Filtros 🔬")
+            st.info("Una vez cargados los datos, usa los filtros geográficos (región, municipio) y temporales (rango de años) para acotar tu análisis a los datos de interés.")
+
+            st.markdown("#### Paso 3: Explorar Análisis 📊")
+            st.info("Navega a través de las diferentes pestañas en la parte superior para acceder a mapas, gráficos, análisis de tendencias, pronósticos y más.")
+            
+            if os.path.exists(Config.GIF_PATH):
+                st.image(Config.GIF_PATH, caption="Ejemplo de Mapa Animado") # [cite: 1524-1527]
+
+    # Mostrar el logo al final
     if os.path.exists(Config.LOGO_PATH):
         try:
-            # CORRECCIÓN: Leemos la imagen en binario para evitar UnidentifiedImageError
-            with open(Config.LOGO_PATH, "rb") as f:
-                logo_bytes = f.read()
-            st.image(logo_bytes, width=250, caption="Corporación Cuenca Verde")
+            with open(Config.LOGO_PATH, "rb") as f: # [cite: 1092]
+                logo_bytes = f.read() # [cite: 1093]
+            st.image(logo_bytes, width=250, caption="Corporación Cuenca Verde") # [cite: 1094]
         except Exception:
-            st.warning("No se pudo cargar el logo de bienvenida.")
-
+            st.warning("No se pudo cargar el logo de bienvenida.") # [cite: 1095]
 
 def display_spatial_distribution_tab(gdf_filtered, stations_for_analysis, df_anual_melted, df_monthly_filtered):
     st.header("Distribución espacial de las Estaciones de Lluvia")
