@@ -283,20 +283,20 @@ if params:
                 value=st.session_state.get('select_all_checkbox', True)
             )
 
-            if st.session_state.get('select_all_checkbox', True) and \
-                    st.session_state.get('station_multiselect') != stations_options:
-                st.session_state.station_multiselect = stations_options
+        if st.session_state.get('select_all_checkbox', True) and \
+                st.session_state.get('station_multiselect') != stations_options:
+            st.session_state.station_multiselect = stations_options
             
-            selected_stations = st.multiselect(
-                'Seleccionar Estaciones',
-                options=stations_options,
-                key='station_multiselect'
-            )
+        selected_stations = st.multiselect(
+            'Seleccionar Estaciones',
+            options=stations_options,
+            key='station_multiselect'
+        )
 
-            years_with_data = sorted(st.session_state.df_long[Config.YEAR_COL].dropna().unique())
-            if not years_with_data:
-                st.error("No hay datos de año válidos en el archivo de precipitación.")
-                return
+        years_with_data = sorted(st.session_state.df_long[Config.YEAR_COL].dropna().unique())
+        if not years_with_data:
+            st.error("No hay datos de año válidos en el archivo de precipitación.")
+            return
                  
             year_range_default = (min(years_with_data), max(years_with_data))
             
