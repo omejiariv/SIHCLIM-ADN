@@ -49,6 +49,29 @@ def apply_filters_to_stations(df, min_perc, altitudes, regions, municipios, celd
     if celdas: stations_filtered = stations_filtered[stations_filtered[Config.CELL_COL].isin(celdas)]
     return stations_filtered
 
+def update_query_params():
+    """Actualiza la URL con los filtros actuales de session_state."""
+    params = st.query_params.to_dict()
+    
+    # Actualizar estaciones
+    if 'station_multiselect' in st.session_state:
+        params['stations'] = st.session_state.station_multiselect
+        
+    # Actualizar regiones
+    if 'regions_multiselect' in st.session_state:
+        params['regions'] = st.session_state.regions_multiselect
+
+    # Actualizar altitudes
+    if 'altitude_multiselect' in st.session_state:
+        params['altitudes'] = st.session_state.altitude_multiselect
+
+    # Actualizar rango de años
+    if 'year_range' in st.session_state:
+        params['start_year'] = st.session_state.year_range[0]
+        params['end_year'] = st.session_state.year_range[1]
+        
+    st.query_params.from_dict(params)
+
 def main():
     st.set_page_config(layout="wide", page_title=Config.APP_TITLE)
     
@@ -78,6 +101,28 @@ def main():
                     unsafe_allow_html=True)
 
     st.sidebar.header("Panel de Control")
+
+    # Leer parámetros de la URL para cargar una sesión
+params = st.query_params
+if params:
+    # Cargar multiselects (estaciones, regiones, etc.)
+    if 'stations' in params:
+        st.session_state.station_multiselect = params.get_all('stations')
+        # Desmarcar 'seleccionar todo' si no todas las estaciones están en la URL
+        st.session_state.select_all_checkbox = False
+    if 'regions' in params:
+        st.session_state.regions_multiselect = params.get_all('regions')
+    if 'altitudes' in params:
+        st.session_state.altitude_multiselect = params.get_all('altitudes')
+
+    # Cargar sliders (rango de años)
+    if 'start_year' in params and 'end_year' in params:
+        try:
+            start_year = int(params.get('start_year'))
+            end_year = int(params.get('end_year'))
+            st.session_state.year_range = (start_year, end_year)
+        except (ValueError, TypeError):
+            pass # Ignorar si los parámetros no son números válidos
 
     # --- 1. LÓGICA DE CARGA PERSISTENTE ---
     
@@ -318,6 +363,8 @@ def main():
         annual_agg.loc[annual_agg['meses_validos'] < 10, 'precipitation_sum'] = np.nan
         df_anual_melted = annual_agg.rename(columns={'precipitation_sum': Config.PRECIPITATION_COL})
 
+        update_query_params()
+        
         # --- DESPLIEGUE DE PESTAÑAS ---
         tab_names = [
             "Bienvenida", "Distribución Espacial", "Gráficos", "Mapas Avanzados",
