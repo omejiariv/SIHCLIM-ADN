@@ -138,30 +138,32 @@ if params:
             uploaded_file_precip = st.file_uploader("2. Cargar archivo de precipitación (CSV)", type="csv", key='uploaded_file_precip')
             uploaded_zip_shapefile = st.file_uploader("3. Cargar shapefile de municipios (.zip)", type="zip", key='uploaded_zip_shapefile')
 
-            if st.button("Procesar y Almacenar Datos", key='process_data_button') and \
-               all([uploaded_file_mapa, uploaded_file_precip, uploaded_zip_shapefile]):
+    # ...
+    if st.button("Procesar y Almacenar Datos", key='process_data_button') and \
+       all([uploaded_file_mapa, uploaded_file_precip, uploaded_zip_shapefile]):
+        st.cache_resource.clear()
+        with st.spinner("Procesando archivos y cargando datos... Esto puede tardar unos minutos."):
+            try:
+                # ... (código de procesamiento, sin cambios)
+                gdf_stations, gdf_municipios, df_long, df_enso = load_and_process_all_data(
+                    uploaded_file_mapa, uploaded_file_precip, uploaded_zip_shapefile)
+            
+                if gdf_stations is not None and df_long is not None and gdf_municipios is not None:
+                    # ... (almacenar en session_state, sin cambios)
+                    st.session_state.data_loaded = True
                 
-                # 💥 CRÍTICO: Limpiar caché antes de procesar 💥
-                st.cache_resource.clear() 
-                
-                with st.spinner("Procesando archivos y cargando datos..."):
-                    # Llamada a la función de procesamiento (definida en data_processor.py)
-                    gdf_stations, gdf_municipios, df_long, df_enso = load_and_process_all_data(
-                        uploaded_file_mapa, uploaded_file_precip, uploaded_zip_shapefile)
-                        
-                    if gdf_stations is not None and df_long is not None and gdf_municipios is not None:
-                        # Almacenar en session_state tras procesamiento exitoso
-                        st.session_state.gdf_stations = gdf_stations
-                        st.session_state.gdf_municipios = gdf_municipios
-                        st.session_state.df_long = df_long
-                        st.session_state.df_enso = df_enso
-                        
-                        st.session_state.data_loaded = True
-                        
-                        st.success("¡Datos cargados y listos!")
-                        st.rerun() 
-                    else:
-                        st.error("Hubo un error al procesar los archivos. Verifique el formato de los datos.")
+                    # REEMPLAZAMOS st.success POR st.toast
+                    st.toast('✅ ¡Datos procesados exitosamente!', icon='🎉')
+                    st.rerun()
+                else:
+                    # REEMPLAZAMOS st.error POR st.toast
+                    st.toast('❌ Error al procesar los archivos.', icon='🚨')
+                    st.error("Hubo un error al procesar los archivos. Verifique el formato de los datos.")
+
+            except Exception as e:
+                st.toast(f'❌ Ocurrió un error inesperado: {e}', icon='🚨')
+                st.error(f"Hubo un error inesperado durante el procesamiento: {e}")
+    # ...
 
     # --- LÓGICA DE FILTROS Y DESPLIEGUE (Solo si los datos están cargados) ---
     if st.session_state.get('data_loaded', False) and st.session_state.get('df_long') is not None:
