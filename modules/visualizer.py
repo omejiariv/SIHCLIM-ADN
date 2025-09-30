@@ -245,7 +245,7 @@ def display_welcome_tab():
     if os.path.exists(Config.LOGO_PATH):
         try:
             # CORRECCIÓN: Leemos la imagen en binario para evitar UnidentifiedImageError
-            with open(Config.LOGO_PATH, "rb") as f:
+            with builtins.open(Config.LOGO_PATH, "rb") as f:
                 logo_bytes = f.read()
             st.image(logo_bytes, width=250, caption="Corporación Cuenca Verde")
         except Exception:
