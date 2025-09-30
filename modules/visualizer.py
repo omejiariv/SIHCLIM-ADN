@@ -290,7 +290,7 @@ def display_spatial_distribution_tab(gdf_filtered, stations_for_analysis, df_anu
                 st.markdown("---")
                 if os.path.exists(Config.LOGO_PATH):
                     try:
-                        with open(Config.LOGO_PATH, "rb") as f:
+                        with builtins.open(Config.LOGO_PATH, "rb") as f:
                             logo_bytes = f.read()
                         st.image(logo_bytes, width=70)
                     except Exception:
@@ -1228,7 +1228,7 @@ def display_stats_tab(df_long, df_anual_melted, df_monthly_filtered, stations_fo
             with logo_col:
                 if os.path.exists(Config.LOGO_PATH): 
                     try:
-                        with open(Config.LOGO_PATH, "rb") as f:
+                        with builtins.open(Config.LOGO_PATH, "rb") as f:
                             logo_bytes = f.read()
                         st.image(logo_bytes, width=50)
                     except Exception:
