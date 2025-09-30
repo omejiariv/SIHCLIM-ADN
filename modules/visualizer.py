@@ -2,6 +2,7 @@
 
 # --- Importaciones Estándar y de Terceros
 
+import builtins
 import streamlit as st
 import pandas as pd
 import base64
