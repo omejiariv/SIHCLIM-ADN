@@ -1,14 +1,23 @@
 # modules/config.py
 
+import os
 import streamlit as st
 import pandas as pd
-import os
 
 class Config:
     # --- Configuración de la Aplicación ---
     APP_TITLE = "Sistema de Información de Lluvias y Clima en el norte de la región Andina"
-    LOGO_PATH = "assets/CuencaVerde_Logo.jpg" 
-    GIF_PATH = "assets/PPAM.gif"
+    # --- RUTAS ROBUSTAS A LOS ARCHIVOS DEL PROYECTO ---
+    # 1. Obtenemos la ruta a la carpeta donde está este archivo (la carpeta 'modules')
+    _MODULES_DIR = os.path.dirname(__file__)
+
+    # 2. Subimos un nivel para llegar a la raíz del proyecto
+    _PROJECT_ROOT = os.path.abspath(os.path.join(_MODULES_DIR, '..'))
+
+    # 3. Construimos las rutas completas y correctas a los archivos
+    GIF_PATH = os.path.join(_PROJECT_ROOT, 'assets', 'PPAM.gif')
+    LOGO_PATH = os.path.join(_PROJECT_ROOT, 'assets', 'CuencaVerde_Logo.jpg')
+
     WELCOME_TEXT = """
     "El futuro, también depende del pasado y de nuestra capacidad presente para anticiparlo" -- omr.
 
@@ -44,7 +53,7 @@ class Config:
     
     # --- Configuración para DEM ---
     # 💥 CORRECCIÓN DEM_SERVER_URL 💥
-    DEM_SERVER_URL = "https://your-server-domain/dem.tif" # Debe ser reemplazada por tu URL real
+    DEM_SERVER_URL = "https://tu-bucket.storage.com/srtm_antioquia.tif" 
     
     @staticmethod
     def initialize_session_state():
@@ -62,8 +71,6 @@ class Config:
             st.session_state.df_monthly_processed = pd.DataFrame()
         if 'meses_numeros' not in st.session_state:
             st.session_state.meses_numeros = list(range(1, 13))
-        if 'year_range' not in st.session_state:
-            st.session_state.year_range = (2000, 2020)
         if 'dem_source' not in st.session_state:
             st.session_state.dem_source = "No usar DEM"
         if 'dem_raster' not in st.session_state:
